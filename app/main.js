@@ -310,17 +310,23 @@ electron.app.on("ready", () => {
     encodingStorage.init()
     createWindow()
 
+    let lastTime = Date.now()
+
     const webRequest = electron.session.defaultSession.webRequest
     webRequest.onBeforeRequest((details, callback) => {
+        const currentTime = Date.now()
+
         const url = details.url
         const isBlocked = common.isWebURL(url) && !_unblockedURLs.includes(url)
-        console.log(`${isBlocked ? "Blocked" : "Loading"}: ${url}`)
+        console.log(`${isBlocked ? "Blocked" : "Loading"}: ${url} (${currentTime - lastTime} ms since last load)`)
         callback({ cancel: isBlocked })
         if (isBlocked) {
             _contentIsBlocked = true
             _mainWindow.webContents.send("contentBlocked", url)
         }
         allowUnblockContent(_contentIsBlocked)
+
+        lastTime = currentTime
     })
     webRequest.onBeforeRedirect(details => {
         const url = details.redirectURL
